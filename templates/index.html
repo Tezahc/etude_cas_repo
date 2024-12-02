@@ -6,11 +6,15 @@
 	<title>C'est mon site namoi</title>
 </head>
 <body>
+
 	<h1>Titre</h1>
 	<p>Lorem ipsum dolor sit amet</p>
-	<div style="text-align:center">
-		<img src="https://media1.tenor.com/m/ovzkWWgS3QEAAAAd/the-lion-king-scar.gif" alt="image_externe" />
-		<img src="https://media1.tenor.com/m/mhqpG8re2cEAAAAd/soe-salome.gif" alt="autre gif" />
-	</div>
+	<form action="/model" method="POST" enctype="multipart/form-data">
+		<label for="img">Select image:</label>
+		<input type="file" id="img" name="img" accept="image/*">
+		<label for="img_name">Choisissez un nom pour votre fichier:</label>
+		<input type="text" id="img_name" name="img_name">
+		<input type="submit" value="submit">
+		</form>
 </body>
 </html>
