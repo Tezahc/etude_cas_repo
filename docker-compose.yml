@@ -11,6 +11,8 @@ services:
       - DATABASE_URL=postgres://postgres:example@db:8765/mydatabase
     depends_on:
       - db
+    volumes:
+      - ./app:/app
 
   db:
     image: postgres:15
