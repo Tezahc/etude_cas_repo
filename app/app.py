@@ -1,9 +1,30 @@
+import os
 from flask import Flask, render_template, request, Response
-from config import app, db, api
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+
+app.config.from_object('config.Config')
+db = SQLAlchemy(app)
+print(app.config)
+
+class Story(db.Model):
+    _tablename_ = 'upload'
+    id = db.Column(db.Integer, primary_key=True)
+    img = db.Column(db.Text, unique=True, nullable=False)
+    filename = db.Column(db.String(50), nullable=False)
+    mimetype = db.Column(db.String(50), nullable=False)
+    prompt = db.Column(db.Text)
+
 app.config['UPLOAD_FOLDER'] = 'static/uploads/'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# @app.before_first_request()
+def create_tables():
+    db.create_all()
+
+with app.app_context():
+    create_tables()
 
 @app.route("/")
 def home():
@@ -13,39 +34,32 @@ def home():
 def about():
     return render_template('about.html')
 
-class Upload(db.Model):
-    _tablename_ = 'upload'
-
-    id = db.Column(db.Integer, primary_key=True)
-    img = db.Column(db.Text, unique=True, nullable=False)
-    filename = db.Column(db.String(50), nullable=False)
-    mimetype = db.Column(db.Text, nullable=False)
-
-@app.route('/model', methods=['POST', 'GET'])
-def upload():
-    if request.method == 'POST':
-        file = request.files['files']
-
-        if not file:
-            return ({"error: No image uploaded"}, 400)
-    
-    mimetype = file.mimetype
-    upload = Upload(img=file.read(), filename=file.filename, mimetype=mimetype)
-    db.session.add(upload)
-    db.session.commit()
-
+# Fabrice
 @app.route('/model', methods=['GET', 'POST'])
 def submit():
     if request.method == 'POST':
         # Récupérer les données du formulaire
-        img = request.files.get('img')
+        img = request.files['img']
+        mimetype = img.mimetype
         prompt = request.form.get('Prompt')
+
         if not img or img.filename == '':
             return "Aucun fichier reçu ou fichier non valide", 400  # Vérifiez que le fichier est présent
 
-
+        # enregistrer l'image "localement"
         image_path = os.path.join(app.config['UPLOAD_FOLDER'], img.filename)
         img.save(image_path)
+
+        story = Story(
+            img = '',
+            filename = img.filename,
+            mimetype = mimetype,
+            prompt = prompt
+        )
+
+        db.session.add(story)
+        db.session.commit()
+
         return render_template('model.html', image_url=image_path,  prompt=prompt)
     # Traiter les données
     return render_template('model.html')
