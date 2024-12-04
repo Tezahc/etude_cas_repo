@@ -1,5 +1,5 @@
 Flask
+flask_sqlalchemy
+Requests
 Jinja2
 psycopg2-binary
-sqlalchemy
-flask-sqlalchemy

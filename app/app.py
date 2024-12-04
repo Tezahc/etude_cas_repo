@@ -1,12 +1,34 @@
 import os
+import requests
 from flask import Flask, render_template, request, Response
 from flask_sqlalchemy import SQLAlchemy
 
+# gestion / init du modèle ollama
+def init_ollama():
+    params = {
+        "model": "" # llava machin
+    }
+    url = "http://ollama:11434/api/pull"
+    rep = requests.post(url, json=params)
+
+def send_prompt():
+    params = {
+        "model": "",
+        "prompt": "Père castor écris moi une histoire",
+        "stream": False
+    }
+    url = "http://ollama:11434/api/generate"
+    rep = requests.post(url, json=params)
+    return rep.json().get("response")
+
+init_ollama()
+
+# Création de l'app flask
 app = Flask(__name__)
 
+# Gestion / init de la db
 app.config.from_object('config.Config')
 db = SQLAlchemy(app)
-print(app.config)
 
 class Story(db.Model):
     _tablename_ = 'upload'
@@ -16,15 +38,9 @@ class Story(db.Model):
     mimetype = db.Column(db.String(50), nullable=False)
     prompt = db.Column(db.Text)
 
-app.config['UPLOAD_FOLDER'] = 'static/uploads/'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-# @app.before_first_request()
-def create_tables():
+with app.app_context():
     db.create_all()
 
-with app.app_context():
-    create_tables()
 
 @app.route("/")
 def home():
@@ -35,6 +51,9 @@ def about():
     return render_template('about.html')
 
 # Fabrice
+app.config['UPLOAD_FOLDER'] = 'static/uploads/'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 @app.route('/model', methods=['GET', 'POST'])
 def submit():
     if request.method == 'POST':
@@ -66,5 +85,5 @@ def submit():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
 
