@@ -1,20 +1,22 @@
 import os
 import requests
+import base64
 from flask import Flask, render_template, request, Response
 from flask_sqlalchemy import SQLAlchemy
+
 
 # gestion / init du modèle ollama
 def init_ollama():
     params = {
-        "model": "" # llava machin
+        "model": "llava-llama3" # llava machin
     }
     url = "http://ollama:11434/api/pull"
     rep = requests.post(url, json=params)
 
-def send_prompt():
+def send_prompt(prompt):
     params = {
-        "model": "",
-        "prompt": "Père castor écris moi une histoire",
+        "model": "llava-llama3",
+        "prompt": "Père castor écris moi une histoire :"+prompt,
         "stream": False
     }
     url = "http://ollama:11434/api/generate"
@@ -31,9 +33,9 @@ app.config.from_object('config.Config')
 db = SQLAlchemy(app)
 
 class Story(db.Model):
-    _tablename_ = 'upload'
+    __tablename__ = 'upload'
     id = db.Column(db.Integer, primary_key=True)
-    img = db.Column(db.Text, unique=True, nullable=False)
+    img = db.Column(db.Binary, unique=True, nullable=False)
     filename = db.Column(db.String(50), nullable=False)
     mimetype = db.Column(db.String(50), nullable=False)
     prompt = db.Column(db.Text)
@@ -59,8 +61,10 @@ def submit():
     if request.method == 'POST':
         # Récupérer les données du formulaire
         img = request.files['img']
+        encoded_string = base64.b64encode(img.read())
         mimetype = img.mimetype
-        prompt = request.form.get('Prompt')
+        # prompt = request.form.get('Prompt')
+        prompt = send_prompt(request.form.get('Prompt'))
 
         if not img or img.filename == '':
             return "Aucun fichier reçu ou fichier non valide", 400  # Vérifiez que le fichier est présent
@@ -70,7 +74,7 @@ def submit():
         img.save(image_path)
 
         story = Story(
-            img = '',
+            img = encoded_string,
             filename = img.filename,
             mimetype = mimetype,
             prompt = prompt
