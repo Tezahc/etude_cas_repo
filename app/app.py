@@ -35,10 +35,11 @@ db = SQLAlchemy(app)
 class Story(db.Model):
     __tablename__ = 'upload'
     id = db.Column(db.Integer, primary_key=True)
-    img = db.Column(db.Binary, unique=True, nullable=False)
+    #img_path = db.Column(db.Text)#, unique=True, nullable=False)
     filename = db.Column(db.String(50), nullable=False)
     mimetype = db.Column(db.String(50), nullable=False)
     prompt = db.Column(db.Text)
+    story = db.Column(db.Text)
 
 with app.app_context():
     db.create_all()
@@ -61,10 +62,10 @@ def submit():
     if request.method == 'POST':
         # Récupérer les données du formulaire
         img = request.files['img']
-        encoded_string = base64.b64encode(img.read())
+        # encoded_string = base64.b64encode(img.read())
         mimetype = img.mimetype
-        # prompt = request.form.get('Prompt')
-        prompt = send_prompt(request.form.get('Prompt'))
+        prompt = request.form.get('Prompt')
+        story = send_prompt(prompt)
 
         if not img or img.filename == '':
             return "Aucun fichier reçu ou fichier non valide", 400  # Vérifiez que le fichier est présent
@@ -73,17 +74,18 @@ def submit():
         image_path = os.path.join(app.config['UPLOAD_FOLDER'], img.filename)
         img.save(image_path)
 
-        story = Story(
-            img = encoded_string,
+        input = Story(
+            #img = '',#, encoded_string,
             filename = img.filename,
             mimetype = mimetype,
-            prompt = prompt
+            prompt = prompt,
+            story = story
         )
 
-        db.session.add(story)
+        db.session.add(input)
         db.session.commit()
 
-        return render_template('model.html', image_url=image_path,  prompt=prompt)
+        return render_template('model.html', image_url=image_path,  histoire=story)
     # Traiter les données
     return render_template('model.html')
 
